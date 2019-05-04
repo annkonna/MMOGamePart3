@@ -24,27 +24,6 @@ class Controller(object):
         url = "http://127.0.0.1:8080/set_player"
         r = requests.post(url, json.dumps(pos))
 
-    def update_redzone_pos(self):
-        url = "http://127.0.0.1:8080/update_redzone_pos"
-        r = requests.post(url, None)
-
-    def get_redzone_pos(self):
-        url = "http://127.0.0.1:8080/get_redzone_pos"
-        r = requests.get(url)
-        r_dict = r.json()
-        return pygame.Rect(r_dict['r_left'], r_dict['r_top'], r_dict['r_width'], r_dict['r_height'])
-
-    def get_player_pos(self):
-        url = "http://127.0.0.1:8080/get_player_pos"
-        r = requests.get(url)
-        p_dict = r.json()
-        return pygame.Rect(p_dict['p_left'], p_dict['p_top'], p_dict['p_width'], p_dict['p_height'])
-
-    def is_player_in_redzone(self):
-        url = "http://127.0.0.1:8080/is_player_in_redzone"
-        r = requests.get(url)
-        return r.json()
-
     def change_player_speed(self, x, y):
         url = "http://127.0.0.1:8080/change_player_speed"
         pos = {
@@ -56,6 +35,11 @@ class Controller(object):
     def move_player(self):
         url = "http://127.0.0.1:8080/move_player"
         r = requests.post(url, None)
+
+    def get_positions(self):
+        url = "http://127.0.0.1:8080/get_positions"
+        r = requests.post(url, None)
+        return r.json()
 
     @staticmethod
     def process_welcome_events(rect):
