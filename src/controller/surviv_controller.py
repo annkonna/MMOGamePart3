@@ -1,8 +1,6 @@
 import pygame
 import json
-
-import model.surviv_model
-
+import requests
 
 class Controller(object):
 
@@ -15,47 +13,49 @@ class Controller(object):
             "p_height": p_rect.height,
             "m_width": m_width
         }
-        self.game = model.surviv_model.GameInterface(json.dumps(game_dict))
-#        self.game = model.surviv_model.Game(p_rect, m_width)
-
+        url = "http://127.0.0.1:8080/init"
+        r = requests.post(url, json.dumps(game_dict))
 
     def set_player(self, x, y):
-        ppos_dict = {
+        pos = {
             "x": x,
             "y": y
         }
-        self.game.set_player(json.dumps(ppos_dict))
-#        self.game.set_player(x, y)
+        url = "http://127.0.0.1:8080/set_player"
+        r = requests.post(url, json.dumps(pos))
 
     def update_redzone_pos(self):
-        self.game.update_redzone_pos()
+        url = "http://127.0.0.1:8080/update_redzone_pos"
+        r = requests.post(url, None)
 
     def get_redzone_pos(self):
-        json_r_dict = self.game.get_redzone_pos()
-        r_dict = json.loads(json_r_dict)
+        url = "http://127.0.0.1:8080/get_redzone_pos"
+        r = requests.get(url)
+        r_dict = r.json()
         return pygame.Rect(r_dict['r_left'], r_dict['r_top'], r_dict['r_width'], r_dict['r_height'])
-#      return self.game.get_redzone_pos()
 
     def get_player_pos(self):
-        json_p_dict = self.game.get_player_pos()
-        p_dict = json.loads(json_p_dict)
+        url = "http://127.0.0.1:8080/get_player_pos"
+        r = requests.get(url)
+        p_dict = r.json()
         return pygame.Rect(p_dict['p_left'], p_dict['p_top'], p_dict['p_width'], p_dict['p_height'])
-#        return self.game.get_player_pos()
 
     def is_player_in_redzone(self):
-        return json.loads(self.game.is_player_in_redzone())
-#        return self.game.is_player_in_redzone()
+        url = "http://127.0.0.1:8080/is_player_in_redzone"
+        r = requests.get(url)
+        return r.json()
 
     def change_player_speed(self, x, y):
-        pspeed_dict = {
+        url = "http://127.0.0.1:8080/change_player_speed"
+        pos = {
             "change_x": x,
             "change_y": y
         }
-        self.game.change_player_speed(json.dumps(pspeed_dict))
-#        self.game.change_player_speed(x,y)
+        r = requests.post(url, json.dumps(pos))
 
     def move_player(self):
-        self.game.move_player()
+        url = "http://127.0.0.1:8080/move_player"
+        r = requests.post(url, None)
 
     @staticmethod
     def process_welcome_events(rect):
