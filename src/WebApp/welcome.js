@@ -1,9 +1,9 @@
-setInterval(updatePlayers, 3000);
-
-function updatePlayers() {
-  document.getElementById("players").value = "Number of players: "+Math.floor((Math.random() * 100) + 1);
-}
-
-function redirect() {
-  window.location.href="game.html"
+function redirect(unitTest=false) {
+	localStorage.setItem("name", document.getElementById("name").value);
+	localStorage.setItem("unitTest", unitTest);
+	if (unitTest) {
+		window.location.href="WebApp/game.html";
+	} else {
+		window.location.href="game.html"
+	}
 }

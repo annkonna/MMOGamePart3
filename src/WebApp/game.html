@@ -20,8 +20,12 @@ function action_on_default(msg){
 
 function action_on_get_positions(msg){
 	r = JSON.parse(msg);
-//  console.log("All info: ")
-//  console.log(r)
+
+  if (g_mode=='true') {
+    console.log("Game State: ")
+    console.log(r)
+  }
+
 	p_coords.x = r.p_left; p_coords.y = r.p_top; p_coords.width = r.p_width; p_coords.height = r.p_height
 	r_coords.x = r.r_left; r_coords.y = r.r_top; r_coords.width = r.r_width; r_coords.height = r.r_height
 	b_in_redzone = r.b_in_redzone
@@ -36,6 +40,8 @@ function action_on_get_new_position(msg){
   r = JSON.parse(msg);
   p_coords.x = r.p_left; p_coords.y = r.p_top; p_coords.width = r.p_width; p_coords.height = r.p_height
 }
+
+var g_mode; // game mode - UnitTesting (true) or Release (false) modes
 
 var p_name; // player name
 var p_coords = new Object(), r_coords = new Object();
@@ -89,7 +95,12 @@ var myScore;
 var myOtherPlayers=[];
 
 function startGame() {
-  p_name = localStorage.getItem("name")
+  p_name = localStorage.getItem("name");
+  g_mode = localStorage.getItem("unitTest");
+  if (g_mode=='true') {
+    console.log("Game running in Unit Testing Mode");
+  } 
+  
   myGameArea.start();
   init_game();
   get_positions();
@@ -199,7 +210,9 @@ function updateGameArea() {
 	myScore.update();
 	myGamePiece.x = p_coords.x; myGamePiece.y = p_coords.y; myGamePiece.width=p_coords.width; myGamePiece.height=p_coords.height
 	myGamePiece.update();
-//  console.log("Player info: "+p_coords.x+", "+p_coords.y);
+  if (g_mode=='true') {
+    console.log("Player info: "+p_coords.x+", "+p_coords.y);
+  }
   if (o_coords.length < myOtherPlayers.length) {
     myOtherPlayers.length = o_coords.length; 
   }
@@ -209,7 +222,9 @@ function updateGameArea() {
   }
   for (var i=myOtherPlayers.length; i<o_coords.length; i++) {
     myOtherPlayers[i] = new component(o_coords[i].width, o_coords[i].height, "other_player1.gif", o_coords[i].x, o_coords[i].y, "image");
-//    console.log("Other Player info: "+o_coords[i].x+", "+o_coords[i].y);
+    if (g_mode=='true') {
+      console.log("Other Player info: "+o_coords[i].x+", "+o_coords[i].y);
+    }
   }
   for (var i=0; i<myOtherPlayers.length; i++) {
     myOtherPlayers[i].update();

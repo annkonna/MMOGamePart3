@@ -61,8 +61,14 @@ class View(object):
 
         self.textinput = None
 
-    def main_loop(self):
+        self.g_mode = False
+
+    def main_loop(self, unitTest = False):
         done = 0
+
+        if (unitTest):
+            self.g_mode = unitTest
+            print("Game running in Unit Testing Mode.")
 
         # Frame rate is set using clock in the program loop
         clock = pygame.time.Clock()
@@ -71,8 +77,8 @@ class View(object):
         self.player_image.set_colorkey((0, 0, 0))  # may not need it for BLACK as it is default
         self.other_player_image = pygame.image.load("view\\other_player1.gif").convert()
         self.other_player_image.set_colorkey((0, 0, 0))  # may not need it for BLACK as it is default
-#        print(self.player_image.get_rect())
-
+        if (unitTest):
+            print(self.player_image.get_rect())
         self.h1_font = pygame.font.SysFont('serif', 32)
         self.h1_font.set_bold(True)
         self.h2_font = pygame.font.SysFont('serif', 24)
@@ -108,7 +114,11 @@ class View(object):
 
         self.scorefont = pygame.font.SysFont('Comic Sans MS', 30)
 
-        self.game_controller.set_player(random.randrange(self.display_width), random.randrange(self.display_height))
+        p_r_width = random.randrange(self.display_width)
+        p_r_height = random.randrange(self.display_height)
+#        print(p_r_width)
+#        print(p_r_height)
+        self.game_controller.set_player(p_r_width, p_r_height)
 
         game_over_flag = False
         while not done:
@@ -195,12 +205,17 @@ class View(object):
             return False
 
     def draw_game_frame(self):
+        if (self.g_mode==True):
+            print("GameState = ")
+            print(self.g_dict)
         self.screen.fill(WHITE)
         self.screen.blit(self.background_image, [0, 0])
         r_rect = pygame.Rect(self.g_dict['r_left'], self.g_dict['r_top'], self.g_dict['r_width'], self.g_dict['r_height'])
         self.screen.fill(RED, r_rect)
         p_rect = pygame.Rect(self.g_dict['p_left'], self.g_dict['p_top'], self.g_dict['p_width'], self.g_dict['p_height'])
         self.screen.blit(self.player_image, [p_rect.x, p_rect.y])
+#        print(p_rect.x)
+#        print(p_rect.y)
         self.screen.blit(self.score_surface, (self.display_width / 3, 10))
         for op in self.g_dict['op_positions']:
             o_rect = pygame.Rect(op['o_left'], op['o_top'], op['o_width'], op['o_height'])

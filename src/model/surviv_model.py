@@ -195,6 +195,15 @@ def do_remove_player():
     game_interface.remove_player(pname_dict)
     return json.dumps(True)
 
+@bottle.post('/set_player')
+def do_set_player():
+    if game_interface == None:
+        return json.dumps(False)
+    content = bottle.request.body.read().decode()
+    ppos_dict = json.loads(content)
+    game_interface.set_player(ppos_dict)
+    return json.dumps(True)
+
 @bottle.post('/change_player_speed')
 def do_change_player_speed():
     if game_interface == None:
@@ -261,4 +270,5 @@ def do_get_new_position():
     return json.dumps(p_dict)
 
 bottle.run(host='127.0.0.1', port=8080)
-#bottle.run(host='localhost', port=8080, debug=True)
+#bottle.run(host='127.0.0.1', port=8080, quiet=True)
+#bottle.run(host='127.0.0.1', port=8080, debug=True)
