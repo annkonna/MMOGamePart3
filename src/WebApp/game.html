@@ -14,57 +14,45 @@ body {
 <body onload="startGame()">
 <script>
 
+function action_on_default(msg){
+  return JSON.parse(msg);
+}
+
+function action_on_get_positions(msg){
+	r = JSON.parse(msg);
+	p_coords.x = r.p_left; p_coords.y = r.p_top; p_coords.width = r.p_width; p_coords.height = r.p_height
+	r_coords.x = r.r_left; r_coords.y = r.r_top; r_coords.width = r.r_width; r_coords.height = r.r_height
+	b_in_redzone = r.b_in_redzone
+}
+
 var p_coords = new Object(), r_coords = new Object();
+var b_in_redzone = false;
+var game_interval = 50 // milliseconds
 function init_game() {
-  p_coords.width = 30; p_coords.height = 30;
-  p_coords.x = Math.floor(Math.random()*myGameArea.canvas.width);
-  p_coords.y = Math.floor(Math.random()*myGameArea.canvas.height);
-  p_coords.change_x = 0; p_coords.change_y = 0;
-
-  r_coords.width = Math.floor(Math.random()*(myGameArea.canvas.width-400)+400)
-  r_coords.height = Math.floor(Math.random()*(myGameArea.canvas.height-200)+200)
-  r_coords.x = myGameArea.canvas.width
-  r_coords.y = Math.floor(Math.random()*500)
-  r_coords.max_width = myGameArea.canvas.width
-}
-
-function set_player(x, y) {
-  p_coords.x = x; p_coords.y = y;
-}
-
-function update_redzone_pos() {
-  if (r_coords.x + r_coords.width < 0) {
-    r_coords.width = Math.floor(Math.random()*(myGameArea.canvas.width-400)+400)
-    r_coords.height = Math.floor(Math.random()*(myGameArea.canvas.height-200)+200)
-    r_coords.x = r_coords.max_width
-    r_coords.y = Math.floor(Math.random()*500)
+  game_dict = {
+      "p_left": Math.floor(Math.random()*myGameArea.canvas.width),
+      "p_top": Math.floor(Math.random()*myGameArea.canvas.height), 
+      "p_width": 48, 
+      "p_height": 53,
+      "m_width": myGameArea.canvas.width
   }
-  r_coords.x += -3
+  url = "http://127.0.0.1:8080/init"
+  ajaxPostRequest(url, JSON.stringify(game_dict), action_on_default);
+
 }
 
-function get_redzone_pos() {
-  return r_coords
+function get_positions() {
+  url = "http://127.0.0.1:8080/get_positions"
+  ajaxPostRequest(url, JSON.stringify(null), action_on_get_positions)	
 }
 
-function get_player_pos() {
-  return p_coords
-}
-
-function is_player_in_redzone() {
-  if (p_coords.x > r_coords.x && p_coords.x+p_coords.width < r_coords.x+r_coords.width &&
-    p_coords.y > r_coords.y && p_coords.y+p_coords.height < r_coords.y+r_coords.height) {
-    return true
+function get_new_positions(x, y) {
+  url = "http://127.0.0.1:8080/get_new_positions"
+  pos = {
+      "change_x": x,
+      "change_y": y
   }
-
-  return false
-}
-
-function change_player_speed(x, y) {
-  p_coords.change_x+=x; p_coords.change_y+=y
-}
-
-function move_player() {
-  p_coords.x += p_coords.change_x; p_coords.y += p_coords.change_y; 
+  ajaxPostRequest(url, JSON.stringify(pos), action_on_get_positions)	
 }
 
 var myGamePiece;
@@ -74,12 +62,11 @@ var myScore;
 function startGame() {
   myGameArea.start();
   init_game();
-  var ppos = get_player_pos();
-  myGamePiece = new component(ppos.width, ppos.height,"player.gif", ppos.x, ppos.y, "image");
+  get_positions();
+  myGamePiece = new component(p_coords.width, p_coords.height,"player.gif", p_coords.x, p_coords.y, "image");
   myScore = new component("30px", "Consolas", "black", 280, 40, "text");
   myBackground = new component(1500, 1000, "game_background.gif", 0, 0, "image");
-  var rpos = get_redzone_pos()
-  myObstacle = new component(rpos.width, rpos.height, "red", rpos.x, rpos.y)
+  myObstacle = new component(r_coords.width, r_coords.height, "red", r_coords.x, r_coords.y)
 }
 
 var myGameArea = {
@@ -89,7 +76,7 @@ var myGameArea = {
     this.canvas.height = window.innerHeight-30;
     this.context = this.canvas.getContext("2d");
     document.body.insertBefore(this.canvas, document.body.childNodes[0]);
-    this.interval = setInterval(updateGameArea, 20);
+    this.interval = setInterval(updateGameArea, game_interval);
     this.frameNo = 0;
     this.crash = 0;
     window.addEventListener('keydown', function (e) {
@@ -105,10 +92,10 @@ var myGameArea = {
   stop : function() {
     myGameArea.clear();
     myBackground.update();
-    if (myGameArea.frameNo==1500) {
-      myScore.text = "You Won!!! Successfully Survived " + myGameArea.frameNo/50 + " seconds.";
+    if (myGameArea.frameNo>=30000/game_interval) {
+      myScore.text = "You Won!!! Successfully Survived " + myGameArea.frameNo*game_interval/1000 + " seconds.";
     } else {
-      myScore.text = "Game Over!!! Survival Time (secs): " + myGameArea.frameNo/50;
+      myScore.text = "Game Over!!! Survival Time (secs): " + myGameArea.frameNo*game_interval/1000;
     }
     myScore.update();
     clearInterval(this.interval);
@@ -149,37 +136,59 @@ function component(width, height, color, x, y, type) {
 }
 
 function updateGameArea() {
-  var x, y;
-  if (is_player_in_redzone()) {
-    myGameArea.crash += 1;
-    if (myGameArea.crash==250) {
-      myGameArea.crash=0;
-      myGameArea.stop();
-      return;
-    }
-  } 
+	var x, y;
+	get_positions()
+	if (b_in_redzone) {
+		myGameArea.crash += 1;
+		if (myGameArea.crash==Math.floor(5000/game_interval)) {
+		  myGameArea.crash=0;
+		  myGameArea.stop();
+		  return;
+		}
+	} 
 
-  if (myGameArea.frameNo == 1500) {
-      myGameArea.stop();
-      return;
-    }
-    myGameArea.clear();
-    myBackground.update();
-    if (myGameArea.key && myGameArea.key == 37) {change_player_speed(-3,0); move_player(); change_player_speed(3,0); }
-    if (myGameArea.key && myGameArea.key == 39) {change_player_speed(3,0); move_player(); change_player_speed(-3,0); }
-    if (myGameArea.key && myGameArea.key == 38) {change_player_speed(0,-3); move_player(); change_player_speed(0,3); }
-    if (myGameArea.key && myGameArea.key == 40) {change_player_speed(0,3); move_player(); change_player_speed(0,-3); }
-    myGameArea.frameNo += 1;
-    update_redzone_pos();
-    var rpos = get_redzone_pos();
-    myObstacle.x = rpos.x; myObstacle.y = rpos.y; myObstacle.width=rpos.width; myObstacle.height=rpos.height
-    myObstacle.update();
-    myScore.text = "SURVIVAL TIME PERIOD (secs): " + myGameArea.frameNo/50;
-    myScore.update();
-    var ppos = get_player_pos();
-    myGamePiece.x = ppos.x; myGamePiece.y = ppos.y; myGamePiece.width=ppos.width; myGamePiece.height=ppos.height
-    myGamePiece.update();
+	if (myGameArea.frameNo == Math.floor(30000/game_interval)) {
+		myGameArea.stop();
+		return;
+	}
+
+	myGameArea.clear();
+	myBackground.update();
+	if (myGameArea.key && myGameArea.key == 37) {get_new_positions(-3,0);}
+	if (myGameArea.key && myGameArea.key == 39) {get_new_positions(3,0);}
+	if (myGameArea.key && myGameArea.key == 38) {get_new_positions(0,-3);}
+	if (myGameArea.key && myGameArea.key == 40) {get_new_positions(0,3);}
+	myGameArea.frameNo += 1;
+	myObstacle.x = r_coords.x; myObstacle.y = r_coords.y; myObstacle.width=r_coords.width; myObstacle.height=r_coords.height
+	myObstacle.update();
+	myScore.text = "SURVIVAL TIME PERIOD (secs): " + myGameArea.frameNo*game_interval/1000;
+	myScore.update();
+	myGamePiece.x = p_coords.x; myGamePiece.y = p_coords.y; myGamePiece.width=p_coords.width; myGamePiece.height=p_coords.height
+	myGamePiece.update();
 }
+
+function ajaxGetRequest(path, callback){
+  var request = new XMLHttpRequest();
+  request.onreadystatechange = function(){
+    if (this.readyState === 4 && this.status === 200){
+      callback(this.response);
+    }
+  };
+  request.open("GET", path);
+  request.send();
+}
+
+function ajaxPostRequest(path, data, callback){
+  var request = new XMLHttpRequest();
+  request.onreadystatechange = function(){
+    if (this.readyState === 4 && this.status === 200){
+      callback(this.response);
+    }
+  };
+  request.open("POST", path);
+  request.send(data);
+}
+
 
 </script>
 </body>

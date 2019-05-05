@@ -28,6 +28,9 @@ class GameInterface(object):
     def move_player(self):
         self.game.move_player()
 
+    def move_player_pos(self, p_dict):
+        self.game.move_player_pos(p_dict['change_x'], p_dict['change_y'])
+
 
 class Game(object):
     def __init__(self, p_rect, m_width):
@@ -51,6 +54,9 @@ class Game(object):
 
     def move_player(self):
         self.player.move()
+
+    def move_player_pos(self, x, y):
+        self.player.move_pos(x, y)
 
     def is_player_in_redzone(self):
         p_rect = self.get_player_pos()
@@ -106,8 +112,16 @@ class Player(object):
         # Move up/down
         self.rect.y += self.change_y
 
+    def move_pos(self, x, y):
+        self.rect.x += x
+        self.rect.y += y
+
 
 game = None
+
+@bottle.hook('after_request')
+def enable_cors():
+    bottle.response.headers['Access-Control-Allow-Origin'] = '*'
 
 @bottle.post('/init')
 def do_init():
@@ -116,54 +130,6 @@ def do_init():
     content = json.loads(content)
     game = GameInterface(content)
     return json.dumps(True)
-
-@bottle.post('/update_redzone_pos')
-def do_update_redzone_pos():
-    if game == None:
-        return json.dumps(False)
-    game.update_redzone_pos()
-    return json.dumps(True)
-
-@bottle.route('/get_redzone_pos')
-def do_get_redzone_pos():
-    if game == None:
-        return json.dumps(None)
-    r_rect = game.get_redzone_pos()
-    r_dict = {
-        "r_left": r_rect.left,
-        "r_top": r_rect.top, 
-        "r_width": r_rect.width, 
-        "r_height": r_rect.height
-    }
-    return json.dumps(r_dict)
-
-@bottle.post('/set_player')
-def do_set_player():
-    if game == None:
-        return json.dumps(False)
-    content = bottle.request.body.read().decode()
-    ppos_dict = json.loads(content)
-    game.set_player(ppos_dict)
-    return json.dumps(True)
-
-@bottle.route('/get_player_pos')
-def do_get_player_pos():
-    if game == None:
-        return json.dumps(None)
-    p_rect = game.get_player_pos()
-    p_dict = {
-        "p_left": p_rect.left,
-        "p_top": p_rect.top, 
-        "p_width": p_rect.width, 
-        "p_height": p_rect.height
-    }
-    return json.dumps(p_dict)
-
-@bottle.route('/is_player_in_redzone')
-def do_is_player_in_redzone():
-    if game == None:
-        return json.dumps(False)
-    return json.dumps(game.is_player_in_redzone())
 
 @bottle.post('/change_player_speed')
 def do_change_player_speed():
@@ -180,6 +146,48 @@ def do_move_player():
         return json.dumps(False)
     game.move_player()
     return json.dumps(True)
+
+@bottle.post('/get_positions')
+def do_get_positions():
+    if game == None:
+        return json.dumps(None)
+    p_rect = game.get_player_pos()
+    game.update_redzone_pos()
+    r_rect = game.get_redzone_pos()
+    p_dict = {
+        "p_left": p_rect.left,
+        "p_top": p_rect.top, 
+        "p_width": p_rect.width, 
+        "p_height": p_rect.height,
+        "r_left": r_rect.left,
+        "r_top": r_rect.top, 
+        "r_width": r_rect.width, 
+        "r_height": r_rect.height,
+        "b_in_redzone": game.is_player_in_redzone()
+    }
+    return json.dumps(p_dict)
+
+@bottle.post('/get_new_positions')
+def do_get_new_positions():
+    if game == None:
+        return json.dumps(None)
+    content = bottle.request.body.read().decode()
+    p_pos = json.loads(content)
+    game.move_player_pos(p_pos)
+    p_rect = game.get_player_pos()
+    r_rect = game.get_redzone_pos()
+    p_dict = {
+        "p_left": p_rect.left,
+        "p_top": p_rect.top, 
+        "p_width": p_rect.width, 
+        "p_height": p_rect.height,
+        "r_left": r_rect.left,
+        "r_top": r_rect.top, 
+        "r_width": r_rect.width, 
+        "r_height": r_rect.height,
+        "b_in_redzone": game.is_player_in_redzone()
+    }
+    return json.dumps(p_dict)
 
 bottle.run(host='127.0.0.1', port=8080)
 #bottle.run(host='localhost', port=8080, debug=True)

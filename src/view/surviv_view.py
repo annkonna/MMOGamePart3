@@ -53,6 +53,8 @@ class View(object):
         self.background_image = None
         self.player_image = None
 
+        self.g_dict = None
+
     def main_loop(self):
         done = 0
 
@@ -151,7 +153,9 @@ class View(object):
         The time spent by player in the redzone and the elapsed time are tracked to determine
         game status (won, done, continue).
         """
-        if self.game_controller.is_player_in_redzone():
+        self.g_dict = self.game_controller.get_positions()
+
+        if self.g_dict['b_in_redzone']:
             self.redzone_time += 1
 
         self.elapsed_time += 1
@@ -174,9 +178,9 @@ class View(object):
     def draw_game_frame(self):
         self.screen.fill(WHITE)
         self.screen.blit(self.background_image, [0, 0])
-        self.game_controller.update_redzone_pos()
-        self.screen.fill(RED, self.game_controller.get_redzone_pos())
-        p_rect = self.game_controller.get_player_pos()
+        r_rect = pygame.Rect(self.g_dict['r_left'], self.g_dict['r_top'], self.g_dict['r_width'], self.g_dict['r_height'])
+        self.screen.fill(RED, r_rect)
+        p_rect = pygame.Rect(self.g_dict['p_left'], self.g_dict['p_top'], self.g_dict['p_width'], self.g_dict['p_height'])
         self.screen.blit(self.player_image, [p_rect.x, p_rect.y])
         self.screen.blit(self.score_surface, (self.display_width / 3, 10))
 
