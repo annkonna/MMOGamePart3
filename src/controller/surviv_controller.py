@@ -4,15 +4,9 @@ import requests
 
 class Controller(object):
 
-    def __init__(self):
+    def __init__(self, p_rect, m_width):
         self.game_over = False
-        self.p_name = None
-
-    def initialize(self, p_name, p_rect, m_width):
-        self.game_over = False
-        self.p_name = p_name
         game_dict = {
-            "p_name": p_name, 
             "p_left": p_rect.left,
             "p_top": p_rect.top, 
             "p_width": p_rect.width, 
@@ -22,24 +16,38 @@ class Controller(object):
         url = "http://127.0.0.1:8080/init"
         r = requests.post(url, json.dumps(game_dict))
 
-    def remove_player(self):
-        url = "http://127.0.0.1:8080/remove_player"
-        p_dict = { "name": self.p_name }
-        r = requests.post(url, json.dumps(p_dict))
-
     def set_player(self, x, y):
         pos = {
-            "name": self.p_name,
             "x": x,
             "y": y
         }
         url = "http://127.0.0.1:8080/set_player"
         r = requests.post(url, json.dumps(pos))
 
+    def update_redzone_pos(self):
+        url = "http://127.0.0.1:8080/update_redzone_pos"
+        r = requests.post(url, None)
+
+    def get_redzone_pos(self):
+        url = "http://127.0.0.1:8080/get_redzone_pos"
+        r = requests.get(url)
+        r_dict = r.json()
+        return pygame.Rect(r_dict['r_left'], r_dict['r_top'], r_dict['r_width'], r_dict['r_height'])
+
+    def get_player_pos(self):
+        url = "http://127.0.0.1:8080/get_player_pos"
+        r = requests.get(url)
+        p_dict = r.json()
+        return pygame.Rect(p_dict['p_left'], p_dict['p_top'], p_dict['p_width'], p_dict['p_height'])
+
+    def is_player_in_redzone(self):
+        url = "http://127.0.0.1:8080/is_player_in_redzone"
+        r = requests.get(url)
+        return r.json()
+
     def change_player_speed(self, x, y):
         url = "http://127.0.0.1:8080/change_player_speed"
         pos = {
-            "name": self.p_name, 
             "change_x": x,
             "change_y": y
         }
@@ -47,19 +55,12 @@ class Controller(object):
 
     def move_player(self):
         url = "http://127.0.0.1:8080/move_player"
-        p_dict = { "name": self.p_name }
-        r = requests.post(url, json.dumps(p_dict))
-
-    def get_positions(self):
-        url = "http://127.0.0.1:8080/get_positions"
-        p_dict = { "name": self.p_name }
-        r = requests.post(url, json.dumps(p_dict))
-        return r.json()
+        r = requests.post(url, None)
 
     @staticmethod
-    def process_welcome_events(rect, events):
+    def process_welcome_events(rect):
         done = 0
-        for event in events:
+        for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 done = 1
             if event.type == pygame.MOUSEBUTTONUP:

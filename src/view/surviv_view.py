@@ -3,9 +3,6 @@ import os
 import controller.surviv_controller
 import random
 
-import pygame_textinput
-
-
 DARK_GREEN = (0, 100, 0)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -48,65 +45,44 @@ class View(object):
         self.h1_surface = None
         self.h2_surface = None
         self.m1_surface = None
-#        self.m2_surface = None
+        self.m2_surface = None
         self.m3_surface = None
         self.m4_surface = None
         self.rz_surface = None
         self.menu_rect = None
         self.background_image = None
         self.player_image = None
-        self.other_player_image = None
 
-        self.g_dict = None
-
-        self.textinput = None
-
-        self.g_mode = False
-
-    def main_loop(self, unitTest = False):
+    def main_loop(self):
         done = 0
-
-        if (unitTest):
-            self.g_mode = unitTest
-            print("Game running in Unit Testing Mode.")
 
         # Frame rate is set using clock in the program loop
         clock = pygame.time.Clock()
 
         self.player_image = pygame.image.load("view\\player.gif").convert()
         self.player_image.set_colorkey((0, 0, 0))  # may not need it for BLACK as it is default
-        self.other_player_image = pygame.image.load("view\\other_player1.gif").convert()
-        self.other_player_image.set_colorkey((0, 0, 0))  # may not need it for BLACK as it is default
-        if (unitTest):
-            print(self.player_image.get_rect())
+        print(self.player_image.get_rect())
+        self.game_controller = controller.surviv_controller.Controller(self.player_image.get_rect(), self.display_width)
+
         self.h1_font = pygame.font.SysFont('serif', 32)
         self.h1_font.set_bold(True)
         self.h2_font = pygame.font.SysFont('serif', 24)
         self.h2_font.set_bold(True)
         self.menu_font = pygame.font.SysFont('times new roman', 14)
 
-        self.textinput = pygame_textinput.TextInput()
-
-        self.game_controller = controller.surviv_controller.Controller()
-
         while not done:
-            events = pygame.event.get()
-            done = self.game_controller.process_welcome_events(self.menu_rect, events)
+            done = self.game_controller.process_welcome_events(self.menu_rect)
             if done == 2:
                 break  # play game
-            self.textinput.update(events)
             self.welcome_logic()
             self.draw_welcome_frame()
             self.display_frame()
-             # Pause for the next frame
+            # Pause for the next frame
             clock.tick(20)
 
         if done == 1:
             pygame.quit()
             return
-
-#        print(self.textinput.get_text())
-        self.game_controller.initialize(self.textinput.get_text(), self.player_image.get_rect(), self.display_width)
 
         done = 0
         self.background_image = pygame.image.load("view\\game_background.gif").convert()
@@ -114,11 +90,7 @@ class View(object):
 
         self.scorefont = pygame.font.SysFont('Comic Sans MS', 30)
 
-        p_r_width = random.randrange(self.display_width)
-        p_r_height = random.randrange(self.display_height)
-#        print(p_r_width)
-#        print(p_r_height)
-        self.game_controller.set_player(p_r_width, p_r_height)
+        self.game_controller.set_player(random.randrange(self.display_width), random.randrange(self.display_height))
 
         game_over_flag = False
         while not done:
@@ -127,19 +99,17 @@ class View(object):
             if not game_over_flag:
                 self.draw_game_frame()
                 self.display_frame()
-
             game_over_flag = ret
             clock.tick(20)  # max 20 frames per second.
 
-        self.game_controller.remove_player()
         pygame.quit()
 
     def welcome_logic(self):
         self.h1_surface = self.h1_font.render('SURVIV.IO CLONE', True, WHITE)
         self.h2_surface = self.h2_font.render('BATTLE ROYALE', True, LIME)
-#        self.m1_surface = self.menu_font.render('Enter your name here.', True, DARK_GRAY)
-#        self.m2_surface = self.menu_font.render('Number of Players: 10', True, BLACK)
-        self.m3_surface = self.menu_font.render('Play Game', True, BLACK)
+        self.m1_surface = self.menu_font.render('Enter your name here.', True, DARK_GRAY)
+        self.m2_surface = self.menu_font.render('Number of Players: 10', True, BLACK)
+        self.m3_surface = self.menu_font.render('Play Solo', True, BLACK)
         self.m4_surface = self.menu_font.render('How to Play', True, BLACK)
 
     def draw_welcome_frame(self):
@@ -155,12 +125,11 @@ class View(object):
         menu_rect.height = menu_rect.height/6
         menu_rect.width -= 30
         self.screen.fill(WHITE, menu_rect)
-        # self.screen.blit(self.m1_surface, self.m1_surface.get_rect(center=(menu_rect.centerx, menu_rect.centery)))
-        self.screen.blit(self.textinput.get_surface(), (menu_rect.centerx, menu_rect.centery-10))
+        self.screen.blit(self.m1_surface, self.m1_surface.get_rect(center=(menu_rect.centerx, menu_rect.centery)))
         # draw "Number of Players" Text Box
-#        menu_rect.centery += 45
-#       self.screen.fill(WHITE, menu_rect)
-#      self.screen.blit(self.m2_surface, self.m2_surface.get_rect(center=(menu_rect.centerx, menu_rect.centery)))
+        menu_rect.centery += 45
+        self.screen.fill(WHITE, menu_rect)
+        self.screen.blit(self.m2_surface, self.m2_surface.get_rect(center=(menu_rect.centerx, menu_rect.centery)))
         # draw "Play Solo" button
         menu_rect.centery += 45
         self.screen.fill(LIGHT_GREEN, menu_rect)
@@ -182,9 +151,7 @@ class View(object):
         The time spent by player in the redzone and the elapsed time are tracked to determine
         game status (won, done, continue).
         """
-        self.g_dict = self.game_controller.get_positions()
-
-        if self.g_dict['b_in_redzone']:
+        if self.game_controller.is_player_in_redzone():
             self.redzone_time += 1
 
         self.elapsed_time += 1
@@ -205,21 +172,13 @@ class View(object):
             return False
 
     def draw_game_frame(self):
-        if (self.g_mode==True):
-            print("GameState = ")
-            print(self.g_dict)
         self.screen.fill(WHITE)
         self.screen.blit(self.background_image, [0, 0])
-        r_rect = pygame.Rect(self.g_dict['r_left'], self.g_dict['r_top'], self.g_dict['r_width'], self.g_dict['r_height'])
-        self.screen.fill(RED, r_rect)
-        p_rect = pygame.Rect(self.g_dict['p_left'], self.g_dict['p_top'], self.g_dict['p_width'], self.g_dict['p_height'])
+        self.game_controller.update_redzone_pos()
+        self.screen.fill(RED, self.game_controller.get_redzone_pos())
+        p_rect = self.game_controller.get_player_pos()
         self.screen.blit(self.player_image, [p_rect.x, p_rect.y])
-#        print(p_rect.x)
-#        print(p_rect.y)
         self.screen.blit(self.score_surface, (self.display_width / 3, 10))
-        for op in self.g_dict['op_positions']:
-            o_rect = pygame.Rect(op['o_left'], op['o_top'], op['o_width'], op['o_height'])
-            self.screen.blit(self.other_player_image, [o_rect.x, o_rect.y])
 
     @staticmethod
     def display_frame():
