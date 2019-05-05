@@ -1,4 +1,9 @@
-function redirect() {
+function redirect(unitTest=false) {
 	localStorage.setItem("name", document.getElementById("name").value);
-	window.location.href="game.html"
+	localStorage.setItem("unitTest", unitTest);
+	if (unitTest) {
+		window.location.href="WebApp/game.html";
+	} else {
+		window.location.href="game.html"
+	}
 }
