@@ -36,8 +36,10 @@ b.	 The process_welcome_events method looks for the MOUSEBUTTONUP event type and
 a.	The Model consists of three classes – Game, Player, and Redzone. The Game represents the Model for the whole game and it has a Player object and a Redzone object to keep track of the player and redzone positions. 
 b.	Game Class - The Controller interacts with the Model using a Game object which is created during Controller constructor Initialization (Line 10) – it takes the player’s image size and the width of the screen as constructor parameters. The Game Object in turn creates a Player and Redzone objects in its constructor – those two take the player’s image size and the display width respectively as their constructor parameters. 
 c.	Player Class – it contains the logic to hold the position of the player on the game screen. 
-d.	Redzone – it contains the logic to hold the position of the redzone on the game screen. 
+d.	Redzone – it contains the logic to hold the position of the redzone on the game screen.
+
 Part 3 introduced multi-player along with Desktop and Web-UIs using the following architectural components:
+
 1.	Bottle Web Server between the controller and the model implemented in Model\surviv_model.py.
 2.	JavaScript based front-end equivalent to the Pygame UI used for the desktop implemented in welcome.html and game.html under WebApp directory.
 3.	Note: The desktop UI using Python pygame library and the web UI using JavaScript were modeled from sample programs (see the sample projects in this directory).
